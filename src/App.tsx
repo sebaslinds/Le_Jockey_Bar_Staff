@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { Auth } from './components/Auth';
 import { TopBar } from './components/TopBar';
 import { MetricsRow } from './components/MetricsRow';
@@ -20,6 +21,12 @@ export default function App() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [requireStaffAssignment, setRequireStaffAssignment] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+
+  const filteredOrders = useMemo(() => {
+    if (activeFilter === 'all') return orders;
+    if (activeFilter === 'unassigned') return orders.filter(o => !o.assignedEmployeeId);
+    return orders.filter(o => o.assignedEmployeeId === activeFilter);
+  }, [orders, activeFilter]);
 
   const fetchOrders = React.useCallback(async () => {
     const { data, error } = await supabase
@@ -143,6 +150,56 @@ export default function App() {
     );
   }, [orders]);
 
+  const handleExportReport = () => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-CA');
+    const timeStr = now.toLocaleTimeString('fr-CA');
+    
+    // Calculate totals based on paid orders
+    const totalSales = orders.reduce((sum, order) => sum + (order.paymentStatus === 'Paid' ? order.subtotal : 0), 0);
+    const totalTaxes = orders.reduce((sum, order) => sum + (order.paymentStatus === 'Paid' ? order.tax : 0), 0);
+    const totalTips = metrics.tips;
+    const totalPaid = metrics.totalPaid;
+    const totalUnpaid = metrics.totalUnpaid;
+
+    // Create worksheet data
+    const wsData = [
+      ['Rapport de fermeture'],
+      [`Date d'impression: ${dateStr} à ${timeStr}`],
+      [],
+      ['Résumé des ventes'],
+      ['Total des ventes (sous-total)', totalSales.toFixed(2)],
+      ['Total des taxes', totalTaxes.toFixed(2)],
+      ['Total des pourboires', totalTips.toFixed(2)],
+      ['Total payé (avec taxes et pourboires)', totalPaid.toFixed(2)],
+      ['Total en attente (impayé)', totalUnpaid.toFixed(2)],
+      [],
+      ['Détail des commandes payées'],
+      ['Numéro', 'Table', 'Sous-total', 'Taxes', 'Pourboire', 'Total', 'Assigné à']
+    ];
+
+    // Add paid orders details
+    orders.filter(o => o.paymentStatus === 'Paid').forEach(order => {
+      const employee = staff.find(s => s.id === order.assignedEmployeeId);
+      wsData.push([
+        order.orderNumber || order.id,
+        order.tableNumber,
+        order.subtotal.toFixed(2),
+        order.tax.toFixed(2),
+        order.tip.toFixed(2),
+        order.total.toFixed(2),
+        employee ? employee.name : 'Non assigné'
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Rapport');
+
+    // Generate Excel file
+    XLSX.writeFile(wb, `Rapport_Fermeture_${dateStr.replace(/-/g, '')}_${timeStr.replace(/:/g, '')}.xlsx`);
+  };
+
   const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
     // Optimistic update
     setOrders((prev) =>
@@ -225,18 +282,20 @@ export default function App() {
           onLanguageToggle={() => setLanguage((l) => (l === 'en' ? 'fr' : 'en'))}
           activeFilter={activeFilter}
           setActiveFilter={setActiveFilter}
+          staff={staff}
+          onOpenStaffModal={() => setIsStaffModalOpen(true)}
         />
 
         <MetricsRow
           language={language}
           metrics={metrics}
           onRefresh={() => console.log('Refresh')}
-          onOpenReports={() => alert('Reports module coming soon')}
+          onOpenReports={handleExportReport}
         />
 
         <main className="flex-1 flex overflow-hidden">
           <KanbanBoard
-            orders={orders}
+            orders={filteredOrders}
             language={language}
             onOrderClick={(order) => {
               setSelectedOrder(order);

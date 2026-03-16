@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { Globe, Menu } from 'lucide-react';
 import { Language, TRANSLATIONS } from '../constants';
+import { Employee } from '../types';
 import { clsx } from 'clsx';
 
 interface TopBarProps {
@@ -10,9 +11,11 @@ interface TopBarProps {
   onLanguageToggle: () => void;
   activeFilter: string;
   setActiveFilter: (filter: string) => void;
+  staff: Employee[];
+  onOpenStaffModal: () => void;
 }
 
-export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilter }: TopBarProps) {
+export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilter, staff, onOpenStaffModal }: TopBarProps) {
   const t = TRANSLATIONS[language];
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -26,10 +29,7 @@ export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilt
   const filters = [
     { id: 'all', label: t.all },
     { id: 'unassigned', label: t.unassigned },
-    { id: 'sarah', label: 'SARAH' },
-    { id: 'mike', label: 'MIKE' },
-    { id: 'alex', label: 'ALEX' },
-    { id: 'team', label: t.team },
+    ...staff.map(s => ({ id: s.id, label: s.name.toUpperCase() })),
   ];
 
   return (
@@ -85,6 +85,12 @@ export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilt
             {filter.label}
           </button>
         ))}
+        <button
+          onClick={onOpenStaffModal}
+          className="px-4 py-1.5 text-xs font-medium uppercase tracking-wider transition-colors border rounded-md bg-transparent text-neutral-400 border-brand-border hover:border-neutral-500"
+        >
+          {t.team}
+        </button>
       </div>
 
       <div className="flex items-center gap-6">
