@@ -116,7 +116,7 @@ export const TRANSLATIONS = {
   },
   fr: {
     dashboard: 'Tableau de bord',
-    totalPaid: 'Revenus Encaissés',
+    totalPaid: 'Ventes',
     totalUnpaid: 'En Attente',
     tips: 'Pourboires',
     staff: 'Personnel',
