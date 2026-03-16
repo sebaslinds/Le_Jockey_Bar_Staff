@@ -310,13 +310,6 @@ export default function App() {
           />
         </main>
 
-        {/* Bottom Bar */}
-        <div className="h-6 bg-brand-surface border-t border-brand-border flex items-center justify-end px-4 text-xs text-brand-accent gap-2 shrink-0">
-          <Info className="w-3 h-3" />
-          <span>3</span>
-          <ChevronUp className="w-3 h-3" />
-        </div>
-
         <StaffChatbot
           orders={orders}
           staff={staff}
