@@ -18,93 +18,93 @@ export default function App() {
   const [staff, setStaff] = useState<Employee[]>(MOCK_EMPLOYEES);
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [requireStaffAssignment, setRequireStaffAssignment] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
 
-  useEffect(() => {
-    // Fetch initial orders
-    const fetchOrders = async () => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (*)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching orders:', error);
-      } else if (data) {
-        // Map database fields to app types if necessary
-        const formattedOrders = data.map(order => {
-          const mappedItems = (order.order_items || []).map((item: any) => ({
+  const fetchOrders = React.useCallback(async () => {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (*)
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching orders:', error);
+    } else if (data) {
+      // Map database fields to app types if necessary
+      const formattedOrders = data.map(order => {
+        const mappedItems = (order.order_items || []).map((item: any) => ({
+          id: item.id || Math.random().toString(),
+          quantity: item.quantity,
+          product: {
             id: item.id || Math.random().toString(),
-            quantity: item.quantity,
-            product: {
-              id: item.id || Math.random().toString(),
-              name: item.item_name,
-              price: Number(item.unit_price),
-              category: 'Drink'
-            },
-            notes: item.alcohol_portion ? `Alcohol: ${item.alcohol_portion}` : undefined
-          }));
+            name: item.item_name,
+            price: Number(item.unit_price),
+            category: 'Drink'
+          },
+          notes: item.alcohol_portion ? `Alcohol: ${item.alcohol_portion}` : undefined
+        }));
 
-          // Normalize status to match OrderStatus type
-          let normalizedStatus = order.status;
-          if (!normalizedStatus || normalizedStatus.toLowerCase() === 'new' || normalizedStatus.toLowerCase() === 'pending') {
-            normalizedStatus = 'New';
-          } else if (normalizedStatus.toLowerCase() === 'approved') {
-            normalizedStatus = 'Approved';
-          } else if (normalizedStatus.toLowerCase() === 'prep') {
-            normalizedStatus = 'Prep';
-          } else if (normalizedStatus.toLowerCase() === 'ready') {
-            normalizedStatus = 'Ready';
-          } else if (normalizedStatus.toLowerCase() === 'completed') {
-            normalizedStatus = 'Completed';
-          } else {
-            normalizedStatus = 'New';
-          }
+        // Normalize status to match OrderStatus type
+        let normalizedStatus = order.status;
+        if (!normalizedStatus || normalizedStatus.toLowerCase() === 'new' || normalizedStatus.toLowerCase() === 'pending') {
+          normalizedStatus = 'New';
+        } else if (normalizedStatus.toLowerCase() === 'approved') {
+          normalizedStatus = 'Approved';
+        } else if (normalizedStatus.toLowerCase() === 'prep') {
+          normalizedStatus = 'Prep';
+        } else if (normalizedStatus.toLowerCase() === 'ready') {
+          normalizedStatus = 'Ready';
+        } else if (normalizedStatus.toLowerCase() === 'completed') {
+          normalizedStatus = 'Completed';
+        } else {
+          normalizedStatus = 'New';
+        }
 
-          // Normalize payment status
-          let normalizedPaymentStatus = order.payment_status || order.paymentStatus;
-          if (!normalizedPaymentStatus || normalizedPaymentStatus.toLowerCase() === 'unpaid') {
-            normalizedPaymentStatus = 'Unpaid';
-          } else if (normalizedPaymentStatus.toLowerCase() === 'paid') {
-            normalizedPaymentStatus = 'Paid';
-          } else {
-            normalizedPaymentStatus = 'Unpaid';
-          }
+        // Normalize payment status
+        let normalizedPaymentStatus = order.payment_status || order.paymentStatus;
+        if (!normalizedPaymentStatus || normalizedPaymentStatus.toLowerCase() === 'unpaid') {
+          normalizedPaymentStatus = 'Unpaid';
+        } else if (normalizedPaymentStatus.toLowerCase() === 'paid') {
+          normalizedPaymentStatus = 'Paid';
+        } else {
+          normalizedPaymentStatus = 'Unpaid';
+        }
 
-          const calculatedSubtotal = mappedItems.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0);
-          const calculatedTax = calculatedSubtotal * 0.14975; // Quebec tax rate
-          const calculatedTotal = calculatedSubtotal + calculatedTax;
+        const calculatedSubtotal = mappedItems.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0);
+        const calculatedTax = calculatedSubtotal * 0.14975; // Quebec tax rate
+        const calculatedTotal = calculatedSubtotal + calculatedTax;
 
-          return {
-            ...order,
-            id: String(order.id),
-            orderNumber: order.order_number,
-            customerName: order.customer_name || order.customerName,
-            status: normalizedStatus,
-            tableNumber: order.table_number || order.tableNumber || 'Takeout',
-            paymentStatus: normalizedPaymentStatus,
-            assignedEmployeeId: order.assigned_employee_id || order.assignedEmployeeId,
-            createdAt: order.created_at || order.createdAt,
-            updatedAt: order.updated_at || order.updatedAt,
-            subtotal: Number(order.subtotal) || calculatedSubtotal,
-            tax: Number(order.tax) || calculatedTax,
-            tip: Number(order.tip) || 0,
-            total: Number(order.total) || calculatedTotal,
-            items: mappedItems.length > 0 ? mappedItems : (typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [])
-          };
-        }) as Order[];
-        setOrders(formattedOrders);
-        setSelectedOrder(prev => {
-          if (!prev) return null;
-          const updated = formattedOrders.find(o => o.id === prev.id);
-          return updated || prev;
-        });
-      }
-    };
+        return {
+          ...order,
+          id: String(order.id),
+          orderNumber: order.order_number,
+          customerName: order.customer_name || order.customerName,
+          status: normalizedStatus,
+          tableNumber: order.table_number || order.tableNumber || 'Takeout',
+          paymentStatus: normalizedPaymentStatus,
+          assignedEmployeeId: order.assigned_employee_id || order.assignedEmployeeId,
+          createdAt: order.created_at || order.createdAt,
+          updatedAt: order.updated_at || order.updatedAt,
+          subtotal: Number(order.subtotal) || calculatedSubtotal,
+          tax: Number(order.tax) || calculatedTax,
+          tip: Number(order.tip) || 0,
+          total: Number(order.total) || calculatedTotal,
+          items: mappedItems.length > 0 ? mappedItems : (typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [])
+        };
+      }) as Order[];
+      setOrders(formattedOrders);
+      setSelectedOrder(prev => {
+        if (!prev) return null;
+        const updated = formattedOrders.find(o => o.id === prev.id);
+        return updated || prev;
+      });
+    }
+  }, []);
 
+  useEffect(() => {
     fetchOrders();
 
     // Subscribe to real-time changes
@@ -126,7 +126,7 @@ export default function App() {
       supabase.removeChannel(ordersSubscription);
       supabase.removeChannel(orderItemsSubscription);
     };
-  }, []);
+  }, [fetchOrders]);
 
   const metrics = useMemo(() => {
     return orders.reduce(
@@ -238,7 +238,14 @@ export default function App() {
           <KanbanBoard
             orders={orders}
             language={language}
-            onOrderClick={setSelectedOrder}
+            onOrderClick={(order) => {
+              setSelectedOrder(order);
+              setRequireStaffAssignment(false);
+            }}
+            onRequireStaffAssignment={(order) => {
+              setSelectedOrder(order);
+              setRequireStaffAssignment(true);
+            }}
             staff={staff}
             onUpdateOrderStatus={handleUpdateOrderStatus}
           />
@@ -262,11 +269,15 @@ export default function App() {
           <OrderDetailModal
             order={selectedOrder}
             language={language}
-            onClose={() => setSelectedOrder(null)}
+            onClose={() => {
+              setSelectedOrder(null);
+              setRequireStaffAssignment(false);
+            }}
             staff={staff}
             onUpdateStatus={handleUpdateOrderStatus}
             onUpdatePayment={handleUpdatePaymentStatus}
             onAssignStaff={handleAssignStaff}
+            requireStaffAssignment={requireStaffAssignment}
           />
         )}
 

@@ -113,7 +113,8 @@ export const TRANSLATIONS = {
     empty: 'EMPTY',
     all: 'ALL',
     unassigned: 'UNASSIGNED',
-    team: 'TEAM'
+    team: 'TEAM',
+    assignStaffFirst: 'Please assign an employee before setting the order to ready.'
   },
   fr: {
     dashboard: 'Tableau de bord',
@@ -152,7 +153,8 @@ export const TRANSLATIONS = {
     empty: 'VIDE',
     all: 'TOUS',
     unassigned: 'NON ASSIGNÉ',
-    team: 'ÉQUIPE'
+    team: 'ÉQUIPE',
+    assignStaffFirst: 'Veuillez assigner un employé avant de mettre la commande prête.'
   }
 };
 

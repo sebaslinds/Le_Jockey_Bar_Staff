@@ -8,11 +8,12 @@ interface KanbanBoardProps {
   orders: Order[];
   language: Language;
   onOrderClick: (order: Order) => void;
+  onRequireStaffAssignment: (order: Order) => void;
   staff: Employee[];
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
 }
 
-export function KanbanBoard({ orders, language, onOrderClick, staff, onUpdateOrderStatus }: KanbanBoardProps) {
+export function KanbanBoard({ orders, language, onOrderClick, onRequireStaffAssignment, staff, onUpdateOrderStatus }: KanbanBoardProps) {
   const t = TRANSLATIONS[language];
 
   const getOrdersByStatus = (status: OrderStatus) => {
@@ -38,6 +39,11 @@ export function KanbanBoard({ orders, language, onOrderClick, staff, onUpdateOrd
               e.preventDefault();
               const orderId = e.dataTransfer.getData('text/plain');
               if (orderId) {
+                const order = orders.find(o => String(o.id) === orderId);
+                if (status === 'Ready' && order && !order.assignedEmployeeId) {
+                  onRequireStaffAssignment(order);
+                  return;
+                }
                 onUpdateOrderStatus(orderId, status);
               }
             }}

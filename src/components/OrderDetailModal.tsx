@@ -12,6 +12,7 @@ interface OrderDetailModalProps {
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onUpdatePayment: (orderId: string, status: PaymentStatus) => void;
   onAssignStaff: (orderId: string, employeeId: string) => void;
+  requireStaffAssignment?: boolean;
 }
 
 export function OrderDetailModal({
@@ -22,7 +23,14 @@ export function OrderDetailModal({
   onUpdateStatus,
   onUpdatePayment,
   onAssignStaff,
+  requireStaffAssignment = false,
 }: OrderDetailModalProps) {
+  const [localRequireStaff, setLocalRequireStaff] = React.useState(requireStaffAssignment);
+
+  React.useEffect(() => {
+    setLocalRequireStaff(requireStaffAssignment);
+  }, [requireStaffAssignment]);
+
   if (!order) return null;
   const t = TRANSLATIONS[language];
 
@@ -141,7 +149,13 @@ export function OrderDetailModal({
                   return (
                     <button
                       key={status}
-                      onClick={() => onUpdateStatus(order.id, status)}
+                      onClick={() => {
+                        if (status === 'Ready' && !order.assignedEmployeeId) {
+                          setLocalRequireStaff(true);
+                          return;
+                        }
+                        onUpdateStatus(order.id, status);
+                      }}
                       className={clsx(
                         "w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors border",
                         order.status === status
@@ -157,7 +171,7 @@ export function OrderDetailModal({
             </div>
 
             {/* Assign Staff */}
-            <div>
+            <div className={clsx("transition-all duration-300", localRequireStaff && !order.assignedEmployeeId ? "ring-2 ring-amber-500/50 p-3 rounded-xl bg-amber-500/5 -mx-3" : "")}>
               <h4 className="text-xs font-mono text-neutral-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <UserPlus className="w-3 h-3" /> {t.assignStaff}
               </h4>
@@ -165,7 +179,10 @@ export function OrderDetailModal({
                 {staff.map((employee) => (
                   <button
                     key={employee.id}
-                    onClick={() => onAssignStaff(order.id, employee.id)}
+                    onClick={() => {
+                      onAssignStaff(order.id, employee.id);
+                      setLocalRequireStaff(false);
+                    }}
                     className={clsx(
                       "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors border",
                       order.assignedEmployeeId === employee.id
@@ -178,6 +195,11 @@ export function OrderDetailModal({
                   </button>
                 ))}
               </div>
+              {localRequireStaff && !order.assignedEmployeeId && (
+                <p className="text-xs text-amber-500 mt-3 animate-pulse">
+                  {t.assignStaffFirst}
+                </p>
+              )}
             </div>
 
           </div>

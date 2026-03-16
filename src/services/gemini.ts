@@ -124,6 +124,9 @@ If you need to perform an action, use the provided tools.`,
         
         const order = orders.find(o => o.id === orderId);
         if (order) {
+          if (newStatus === 'Ready' && !order.assignedEmployeeId) {
+            return `I cannot update order ${orderId} to Ready because it does not have an assigned employee. Please assign an employee first.`;
+          }
           onUpdateOrderStatus(orderId, newStatus);
           return `I have updated order ${orderId} to ${newStatus}.`;
         }
