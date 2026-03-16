@@ -181,6 +181,9 @@ export function OrderDetailModal({
                     key={employee.id}
                     onClick={() => {
                       onAssignStaff(order.id, employee.id);
+                      if (localRequireStaff) {
+                        onUpdateStatus(order.id, 'Ready');
+                      }
                       setLocalRequireStaff(false);
                     }}
                     className={clsx(
