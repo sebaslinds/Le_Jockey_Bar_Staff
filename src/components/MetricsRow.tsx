@@ -76,14 +76,14 @@ export function MetricsRow({ language, metrics, onRefresh, onOpenReports }: Metr
       <div className="flex flex-col gap-4 w-48">
         <button
           onClick={onRefresh}
-          className="flex-1 flex items-center justify-center gap-3 bg-brand-surface border border-brand-border hover:bg-brand-surface-hover transition-colors text-xs font-medium tracking-widest uppercase text-neutral-300"
+          className="flex-1 flex items-center justify-center gap-3 bg-brand-surface border border-brand-border hover:bg-brand-surface-hover transition-colors text-xs font-medium tracking-widest uppercase text-neutral-300 rounded-md"
         >
           <RefreshCw className="w-4 h-4" />
           {t.refresh}
         </button>
         <button
           onClick={onOpenReports}
-          className="flex-1 flex items-center justify-center gap-3 bg-brand-surface border border-brand-border hover:bg-brand-surface-hover transition-colors text-xs font-medium tracking-widest uppercase text-neutral-300"
+          className="flex-1 flex items-center justify-center gap-3 bg-brand-surface border border-brand-border hover:bg-brand-surface-hover transition-colors text-xs font-medium tracking-widest uppercase text-neutral-300 rounded-md"
         >
           <FileText className="w-4 h-4" />
           {t.reports}

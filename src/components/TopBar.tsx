@@ -76,7 +76,7 @@ export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilt
             key={filter.id}
             onClick={() => setActiveFilter(filter.id)}
             className={clsx(
-              "px-4 py-1.5 text-xs font-medium uppercase tracking-wider transition-colors border",
+              "px-4 py-1.5 text-xs font-medium uppercase tracking-wider transition-colors border rounded-md",
               activeFilter === filter.id
                 ? "bg-brand-accent text-brand-bg border-brand-accent"
                 : "bg-transparent text-neutral-400 border-brand-border hover:border-neutral-500"

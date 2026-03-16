@@ -27,16 +27,25 @@ export function OrderDetailModal({
   const t = TRANSLATIONS[language];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-brand-border bg-brand-bg/50">
           <div>
             <span className="text-brand-accent font-mono text-sm tracking-widest uppercase mb-1 block">
-              {order.id}
+              {order.orderNumber ? `#${order.orderNumber}` : order.id}
             </span>
-            <h2 className="text-3xl font-serif text-brand-text">{t.table} {order.tableNumber}</h2>
+            <h2 className="text-3xl font-serif text-brand-text">
+              {order.tableNumber.toLowerCase() === 'takeout' ? t.takeout : `${t.table} ${order.tableNumber}`}
+              {order.customerName && <span className="text-neutral-400 ml-2 text-xl">({order.customerName})</span>}
+            </h2>
           </div>
           <button
             onClick={onClose}

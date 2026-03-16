@@ -27,8 +27,18 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, language, onClick, 
     >
       <div className="flex justify-between items-start mb-3">
         <div>
-          <span className="text-xs font-mono text-neutral-500 block mb-1">{order.id}</span>
-          <h3 className="font-serif text-lg text-brand-text">{t.table} {order.tableNumber}</h3>
+          <span className="text-xs font-mono text-neutral-500 block mb-1">
+            {order.orderNumber ? `#${order.orderNumber}` : order.id}
+          </span>
+          <h3 className="font-serif text-lg text-brand-text">
+            {order.tableNumber.toLowerCase() === 'takeout' ? t.takeout : `${t.table} ${order.tableNumber}`}
+          </h3>
+          {order.customerName && (
+            <div className="text-sm text-neutral-400 mt-0.5 flex items-center gap-1">
+              <User className="w-3 h-3" />
+              {order.customerName}
+            </div>
+          )}
         </div>
         <div className={clsx(
           "px-2 py-1 rounded text-[10px] font-mono uppercase tracking-wider border",

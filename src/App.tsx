@@ -76,6 +76,8 @@ export default function App() {
 
           return {
             ...order,
+            orderNumber: order.order_number,
+            customerName: order.customer_name || order.customerName,
             status: normalizedStatus,
             tableNumber: order.table_number || order.tableNumber || 'Takeout',
             paymentStatus: normalizedPaymentStatus,
