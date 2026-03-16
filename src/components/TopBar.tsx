@@ -99,7 +99,7 @@ export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilt
           className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-border hover:bg-brand-surface transition-colors text-xs font-medium text-neutral-400"
         >
           <Globe className="w-3.5 h-3.5" />
-          <span className="uppercase">{language}</span>
+          <span className="uppercase">{language === 'fr' ? 'en' : 'fr'}</span>
         </button>
 
         <div className="text-right flex flex-col items-end">
