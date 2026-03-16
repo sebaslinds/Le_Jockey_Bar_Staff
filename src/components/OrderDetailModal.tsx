@@ -89,10 +89,6 @@ export function OrderDetailModal({
                 <span>{t.tax}</span>
                 <span className="font-mono">${order.tax.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm text-neutral-400">
-                <span>{t.tip}</span>
-                <span className="font-mono">${order.tip.toFixed(2)}</span>
-              </div>
               <div className="flex justify-between text-lg font-serif text-brand-accent mt-4 pt-4 border-t border-brand-border/50">
                 <span>{t.total}</span>
                 <span className="font-mono">${order.total.toFixed(2)}</span>

@@ -74,8 +74,13 @@ export default function App() {
             normalizedPaymentStatus = 'Unpaid';
           }
 
+          const calculatedSubtotal = mappedItems.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0);
+          const calculatedTax = calculatedSubtotal * 0.14975; // Quebec tax rate
+          const calculatedTotal = calculatedSubtotal + calculatedTax;
+
           return {
             ...order,
+            id: String(order.id),
             orderNumber: order.order_number,
             customerName: order.customer_name || order.customerName,
             status: normalizedStatus,
@@ -84,10 +89,10 @@ export default function App() {
             assignedEmployeeId: order.assigned_employee_id || order.assignedEmployeeId,
             createdAt: order.created_at || order.createdAt,
             updatedAt: order.updated_at || order.updatedAt,
-            subtotal: Number(order.subtotal) || 0,
-            tax: Number(order.tax) || 0,
+            subtotal: Number(order.subtotal) || calculatedSubtotal,
+            tax: Number(order.tax) || calculatedTax,
             tip: Number(order.tip) || 0,
-            total: Number(order.total) || 0,
+            total: Number(order.total) || calculatedTotal,
             items: mappedItems.length > 0 ? mappedItems : (typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [])
           };
         }) as Order[];
@@ -141,16 +146,16 @@ export default function App() {
   const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
     // Optimistic update
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o))
+      prev.map((o) => (String(o.id) === String(orderId) ? { ...o, status, updatedAt: new Date().toISOString() } : o))
     );
-    if (selectedOrder?.id === orderId) {
+    if (selectedOrder && String(selectedOrder.id) === String(orderId)) {
       setSelectedOrder((prev) => (prev ? { ...prev, status } : null));
     }
 
     // Push to Supabase
     const { error } = await supabase
       .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status })
       .eq('id', orderId);
       
     if (error) {
@@ -162,16 +167,16 @@ export default function App() {
   const handleUpdatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus) => {
     // Optimistic update
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, paymentStatus, updatedAt: new Date().toISOString() } : o))
+      prev.map((o) => (String(o.id) === String(orderId) ? { ...o, paymentStatus, updatedAt: new Date().toISOString() } : o))
     );
-    if (selectedOrder?.id === orderId) {
+    if (selectedOrder && String(selectedOrder.id) === String(orderId)) {
       setSelectedOrder((prev) => (prev ? { ...prev, paymentStatus } : null));
     }
 
     // Push to Supabase
     const { error } = await supabase
       .from('orders')
-      .update({ payment_status: paymentStatus, updated_at: new Date().toISOString() })
+      .update({ payment_status: paymentStatus })
       .eq('id', orderId);
       
     if (error) {
@@ -182,16 +187,16 @@ export default function App() {
   const handleAssignStaff = async (orderId: string, employeeId: string) => {
     // Optimistic update
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, assignedEmployeeId: employeeId, updatedAt: new Date().toISOString() } : o))
+      prev.map((o) => (String(o.id) === String(orderId) ? { ...o, assignedEmployeeId: employeeId, updatedAt: new Date().toISOString() } : o))
     );
-    if (selectedOrder?.id === orderId) {
+    if (selectedOrder && String(selectedOrder.id) === String(orderId)) {
       setSelectedOrder((prev) => (prev ? { ...prev, assignedEmployeeId: employeeId } : null));
     }
 
     // Push to Supabase
     const { error } = await supabase
       .from('orders')
-      .update({ assigned_employee_id: employeeId, updated_at: new Date().toISOString() })
+      .update({ assigned_employee_id: employeeId })
       .eq('id', orderId);
       
     if (error) {

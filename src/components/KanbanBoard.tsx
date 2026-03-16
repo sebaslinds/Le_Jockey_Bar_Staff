@@ -64,7 +64,7 @@ export function KanbanBoard({ orders, language, onOrderClick, staff, onUpdateOrd
                   assignedEmployee={staff.find(s => s.id === order.assignedEmployeeId)}
                   draggable
                   onDragStart={(e) => {
-                    e.dataTransfer.setData('text/plain', order.id);
+                    e.dataTransfer.setData('text/plain', String(order.id));
                     e.dataTransfer.effectAllowed = 'move';
                   }}
                 />
