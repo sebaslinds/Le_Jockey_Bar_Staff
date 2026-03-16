@@ -1,0 +1,38 @@
+export type OrderStatus = 'New' | 'Approved' | 'Prep' | 'Ready' | 'Completed';
+export type PaymentStatus = 'Paid' | 'Unpaid';
+
+export interface Employee {
+  id: string;
+  name: string;
+  role: string;
+  avatarUrl?: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+}
+
+export interface OrderItem {
+  id: string;
+  product: Product;
+  quantity: number;
+  notes?: string;
+}
+
+export interface Order {
+  id: string;
+  tableNumber: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  items: OrderItem[];
+  assignedEmployeeId?: string;
+  createdAt: string;
+  updatedAt: string;
+  subtotal: number;
+  tax: number;
+  tip: number;
+  total: number;
+}
