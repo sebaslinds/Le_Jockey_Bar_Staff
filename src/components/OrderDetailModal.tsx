@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Order, OrderStatus, PaymentStatus, Employee } from '../types';
 import { Language, TRANSLATIONS, ORDER_STATUSES } from '../constants';
-import { X, UserPlus, CheckCircle, CreditCard } from 'lucide-react';
+import { X, UserPlus, CheckCircle, CreditCard, SplitSquareHorizontal } from 'lucide-react';
 import { clsx } from 'clsx';
+import { SplitBillModal, SplitData } from './SplitBillModal';
 
 interface OrderDetailModalProps {
   order: Order | null;
@@ -12,6 +13,7 @@ interface OrderDetailModalProps {
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onUpdatePayment: (orderId: string, status: PaymentStatus) => void;
   onAssignStaff: (orderId: string, employeeId: string) => void;
+  onSplitOrder?: (orderId: string, splitData: SplitData) => void;
   requireStaffAssignment?: boolean;
 }
 
@@ -23,9 +25,11 @@ export function OrderDetailModal({
   onUpdateStatus,
   onUpdatePayment,
   onAssignStaff,
+  onSplitOrder,
   requireStaffAssignment = false,
 }: OrderDetailModalProps) {
-  const [localRequireStaff, setLocalRequireStaff] = React.useState(requireStaffAssignment);
+  const [localRequireStaff, setLocalRequireStaff] = useState(requireStaffAssignment);
+  const [isSplitting, setIsSplitting] = useState(false);
 
   React.useEffect(() => {
     setLocalRequireStaff(requireStaffAssignment);
@@ -35,33 +39,45 @@ export function OrderDetailModal({
   const t = TRANSLATIONS[language];
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
+    <>
       <div 
-        className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        onClick={onClose}
       >
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-brand-border bg-brand-bg/50">
-          <div>
-            <span className="text-brand-accent font-mono text-sm tracking-widest uppercase mb-1 block">
-              {order.orderNumber ? `#${order.orderNumber}` : order.id}
-            </span>
-            <h2 className="text-3xl font-serif text-brand-text">
-              {order.tableNumber.toLowerCase() === 'takeout' ? t.takeout : `${t.table} ${order.tableNumber}`}
-              {order.customerName && <span className="text-neutral-400 ml-2 text-xl">({order.customerName})</span>}
-            </h2>
+        <div 
+          className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-brand-border bg-brand-bg/50">
+            <div>
+              <span className="text-brand-accent font-mono text-sm tracking-widest uppercase mb-1 block">
+                {order.orderNumber ? `#${order.orderNumber}` : order.id}
+              </span>
+              <h2 className="text-3xl font-serif text-brand-text">
+                {order.tableNumber.toLowerCase() === 'takeout' ? t.takeout : `${t.table} ${order.tableNumber}`}
+                {order.customerName && <span className="text-neutral-400 ml-2 text-xl">({order.customerName})</span>}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {onSplitOrder && (
+                <button
+                  onClick={() => setIsSplitting(true)}
+                  className="p-2 rounded-full hover:bg-brand-border transition-colors text-neutral-400 hover:text-brand-accent flex items-center gap-2"
+                  title={language === 'fr' ? 'Séparer la facture' : 'Split Bill'}
+                >
+                  <SplitSquareHorizontal className="w-5 h-5" />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-brand-border transition-colors text-neutral-400 hover:text-brand-text"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-brand-border transition-colors text-neutral-400 hover:text-brand-text"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col md:flex-row gap-8">
           
@@ -208,6 +224,19 @@ export function OrderDetailModal({
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+      {isSplitting && onSplitOrder && (
+        <SplitBillModal
+          order={order}
+          language={language}
+          onClose={() => setIsSplitting(false)}
+          onConfirmSplit={(data) => {
+            onSplitOrder(order.id, data);
+            setIsSplitting(false);
+          }}
+        />
+      )}
+    </>
   );
 }

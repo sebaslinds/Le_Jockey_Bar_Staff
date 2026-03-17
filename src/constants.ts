@@ -8,6 +8,7 @@ export const STATUS_COLORS: Record<OrderStatus, { dot: string, text: string }> =
   Prep: { dot: 'bg-orange-500', text: 'text-orange-500' },
   Ready: { dot: 'bg-green-500', text: 'text-green-500' },
   Completed: { dot: 'bg-neutral-500', text: 'text-neutral-500' },
+  Canceled: { dot: 'bg-red-500', text: 'text-red-500' },
 };
 
 export const MOCK_EMPLOYEES: Employee[] = [
@@ -35,10 +36,10 @@ export const MOCK_ORDERS: Order[] = [
     ],
     createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-    subtotal: 48,
-    tax: 4.8,
+    subtotal: 41.75,
+    tax: 6.25,
     tip: 0,
-    total: 52.8,
+    total: 48,
   },
   {
     id: 'ORD-102',
@@ -51,10 +52,10 @@ export const MOCK_ORDERS: Order[] = [
     ],
     createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-    subtotal: 350,
-    tax: 35,
+    subtotal: 304.41,
+    tax: 45.59,
     tip: 70,
-    total: 455,
+    total: 420,
   },
   {
     id: 'ORD-103',
@@ -68,10 +69,10 @@ export const MOCK_ORDERS: Order[] = [
     ],
     createdAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-    subtotal: 92,
-    tax: 9.2,
+    subtotal: 80.02,
+    tax: 11.98,
     tip: 0,
-    total: 101.2,
+    total: 92,
   },
 ];
 
@@ -89,6 +90,7 @@ export const TRANSLATIONS = {
     prep: 'Prep',
     ready: 'Ready',
     completed: 'History',
+    canceled: 'Canceled',
     paid: 'Paid',
     unpaid: 'Unpaid',
     table: 'Table',
@@ -129,6 +131,7 @@ export const TRANSLATIONS = {
     prep: 'Préparation',
     ready: 'Prêt',
     completed: 'Historique',
+    canceled: 'Annulé',
     paid: 'Payé',
     unpaid: 'Impayé',
     table: 'Table',

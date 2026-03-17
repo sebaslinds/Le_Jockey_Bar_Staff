@@ -1,4 +1,4 @@
-export type OrderStatus = 'New' | 'Approved' | 'Prep' | 'Ready' | 'Completed';
+export type OrderStatus = 'New' | 'Approved' | 'Prep' | 'Ready' | 'Completed' | 'Canceled';
 export type PaymentStatus = 'Paid' | 'Unpaid';
 
 export interface Employee {

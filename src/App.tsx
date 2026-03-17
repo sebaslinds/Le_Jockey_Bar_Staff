@@ -7,16 +7,79 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { OrderDetailModal } from './components/OrderDetailModal';
 import { StaffManagementModal } from './components/StaffManagementModal';
 import { StaffChatbot } from './components/StaffChatbot';
+import { SplitData } from './components/SplitBillModal';
+import { SplitResultModal } from './components/SplitResultModal';
 import { Order, Employee, OrderStatus, PaymentStatus } from './types';
 import { MOCK_EMPLOYEES, Language } from './constants';
 import { Info, ChevronUp } from 'lucide-react';
 import { supabase } from './lib/supabase';
+
+const mapDbOrderToAppOrder = (order: any): Order => {
+  const mappedItems = (order.order_items || []).map((item: any) => ({
+    id: item.id || Math.random().toString(),
+    quantity: item.quantity,
+    product: {
+      id: item.id || Math.random().toString(),
+      name: item.item_name,
+      price: Number(item.unit_price),
+      category: 'Drink'
+    },
+    notes: item.alcohol_portion ? `Alcohol: ${item.alcohol_portion}` : undefined
+  }));
+
+  let normalizedStatus = order.status;
+  if (!normalizedStatus || normalizedStatus.toLowerCase() === 'new' || normalizedStatus.toLowerCase() === 'pending') {
+    normalizedStatus = 'New';
+  } else if (normalizedStatus.toLowerCase() === 'approved') {
+    normalizedStatus = 'Approved';
+  } else if (normalizedStatus.toLowerCase() === 'prep') {
+    normalizedStatus = 'Prep';
+  } else if (normalizedStatus.toLowerCase() === 'ready') {
+    normalizedStatus = 'Ready';
+  } else if (normalizedStatus.toLowerCase() === 'completed') {
+    normalizedStatus = 'Completed';
+  } else {
+    normalizedStatus = 'New';
+  }
+
+  let normalizedPaymentStatus = order.payment_status || order.paymentStatus;
+  if (!normalizedPaymentStatus || normalizedPaymentStatus.toLowerCase() === 'unpaid') {
+    normalizedPaymentStatus = 'Unpaid';
+  } else if (normalizedPaymentStatus.toLowerCase() === 'paid') {
+    normalizedPaymentStatus = 'Paid';
+  } else {
+    normalizedPaymentStatus = 'Unpaid';
+  }
+
+  const calculatedTotal = mappedItems.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0);
+  const calculatedSubtotal = calculatedTotal / 1.14975;
+  const calculatedTax = calculatedTotal - calculatedSubtotal;
+
+  return {
+    ...order,
+    id: String(order.id),
+    orderNumber: order.order_number,
+    customerName: order.customer_name || order.customerName,
+    status: normalizedStatus,
+    tableNumber: order.table_number || order.tableNumber || 'Takeout',
+    paymentStatus: normalizedPaymentStatus,
+    assignedEmployeeId: order.assigned_employee_id || order.assignedEmployeeId,
+    createdAt: order.created_at || order.createdAt,
+    updatedAt: order.updated_at || order.updatedAt,
+    subtotal: Number(order.subtotal) || calculatedSubtotal,
+    tax: Number(order.tax) || calculatedTax,
+    tip: Number(order.tip) || 0,
+    total: Number(order.total) || (calculatedTotal + (Number(order.tip) || 0)),
+    items: mappedItems.length > 0 ? mappedItems : (typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [])
+  };
+};
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('fr'); // Default to FR based on image
   const [activeFilter, setActiveFilter] = useState('all');
   const [orders, setOrders] = useState<Order[]>([]);
   const [staff, setStaff] = useState<Employee[]>(MOCK_EMPLOYEES);
+  const [splitResultOrders, setSplitResultOrders] = useState<Order[] | null>(null);
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [requireStaffAssignment, setRequireStaffAssignment] = useState(false);
@@ -25,7 +88,7 @@ export default function App() {
   const filteredOrders = useMemo(() => {
     if (activeFilter === 'all') return orders;
     if (activeFilter === 'unassigned') return orders.filter(o => !o.assignedEmployeeId);
-    return orders.filter(o => o.assignedEmployeeId === activeFilter);
+    return orders.filter(o => String(o.assignedEmployeeId) === String(activeFilter));
   }, [orders, activeFilter]);
 
   const fetchOrders = React.useCallback(async () => {
@@ -40,68 +103,7 @@ export default function App() {
     if (error) {
       console.error('Error fetching orders:', error);
     } else if (data) {
-      // Map database fields to app types if necessary
-      const formattedOrders = data.map(order => {
-        const mappedItems = (order.order_items || []).map((item: any) => ({
-          id: item.id || Math.random().toString(),
-          quantity: item.quantity,
-          product: {
-            id: item.id || Math.random().toString(),
-            name: item.item_name,
-            price: Number(item.unit_price),
-            category: 'Drink'
-          },
-          notes: item.alcohol_portion ? `Alcohol: ${item.alcohol_portion}` : undefined
-        }));
-
-        // Normalize status to match OrderStatus type
-        let normalizedStatus = order.status;
-        if (!normalizedStatus || normalizedStatus.toLowerCase() === 'new' || normalizedStatus.toLowerCase() === 'pending') {
-          normalizedStatus = 'New';
-        } else if (normalizedStatus.toLowerCase() === 'approved') {
-          normalizedStatus = 'Approved';
-        } else if (normalizedStatus.toLowerCase() === 'prep') {
-          normalizedStatus = 'Prep';
-        } else if (normalizedStatus.toLowerCase() === 'ready') {
-          normalizedStatus = 'Ready';
-        } else if (normalizedStatus.toLowerCase() === 'completed') {
-          normalizedStatus = 'Completed';
-        } else {
-          normalizedStatus = 'New';
-        }
-
-        // Normalize payment status
-        let normalizedPaymentStatus = order.payment_status || order.paymentStatus;
-        if (!normalizedPaymentStatus || normalizedPaymentStatus.toLowerCase() === 'unpaid') {
-          normalizedPaymentStatus = 'Unpaid';
-        } else if (normalizedPaymentStatus.toLowerCase() === 'paid') {
-          normalizedPaymentStatus = 'Paid';
-        } else {
-          normalizedPaymentStatus = 'Unpaid';
-        }
-
-        const calculatedSubtotal = mappedItems.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0);
-        const calculatedTax = calculatedSubtotal * 0.14975; // Quebec tax rate
-        const calculatedTotal = calculatedSubtotal + calculatedTax;
-
-        return {
-          ...order,
-          id: String(order.id),
-          orderNumber: order.order_number,
-          customerName: order.customer_name || order.customerName,
-          status: normalizedStatus,
-          tableNumber: order.table_number || order.tableNumber || 'Takeout',
-          paymentStatus: normalizedPaymentStatus,
-          assignedEmployeeId: order.assigned_employee_id || order.assignedEmployeeId,
-          createdAt: order.created_at || order.createdAt,
-          updatedAt: order.updated_at || order.updatedAt,
-          subtotal: Number(order.subtotal) || calculatedSubtotal,
-          tax: Number(order.tax) || calculatedTax,
-          tip: Number(order.tip) || 0,
-          total: Number(order.total) || calculatedTotal,
-          items: mappedItems.length > 0 ? mappedItems : (typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [])
-        };
-      }) as Order[];
+      const formattedOrders = data.map(mapDbOrderToAppOrder);
       setOrders(formattedOrders);
       setSelectedOrder(prev => {
         if (!prev) return null;
@@ -261,6 +263,125 @@ export default function App() {
     }
   };
 
+  const handleSplitOrder = async (originalOrderId: string, splitData: SplitData) => {
+    const originalOrder = orders.find(o => String(o.id) === String(originalOrderId));
+    if (!originalOrder) return;
+
+    let items1 = [];
+    let items2 = [];
+    let total1 = 0;
+    let total2 = 0;
+
+    if (splitData.type === 'percentage') {
+      const pct = splitData.percentage / 100;
+      items1 = originalOrder.items.map(item => ({
+        ...item,
+        id: item.id + '-1',
+        product: { ...item.product, price: item.product.price * pct }
+      }));
+      items2 = originalOrder.items.map(item => ({
+        ...item,
+        id: item.id + '-2',
+        product: { ...item.product, price: item.product.price * (1 - pct) }
+      }));
+      total1 = (originalOrder.total - originalOrder.tip) * pct;
+      total2 = (originalOrder.total - originalOrder.tip) * (1 - pct);
+    } else {
+      originalOrder.items.forEach(item => {
+        const qty1 = splitData.selectedItems[item.id] || 0;
+        const qty2 = item.quantity - qty1;
+
+        if (qty1 > 0) {
+          items1.push({ ...item, quantity: qty1, id: item.id + '-1' });
+        }
+        if (qty2 > 0) {
+          items2.push({ ...item, quantity: qty2, id: item.id + '-2' });
+        }
+      });
+      total1 = items1.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+      total2 = items2.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    }
+
+    const subtotal1 = total1 / 1.14975;
+    const subtotal2 = total2 / 1.14975;
+    const tax1 = total1 - subtotal1;
+    const tax2 = total2 - subtotal2;
+
+    const mapToDb = (sub: number, tax: number, tot: number, suffix: string) => ({
+      status: originalOrder.status,
+      customer_name: originalOrder.customerName,
+      table_number: originalOrder.tableNumber,
+      payment_status: originalOrder.paymentStatus,
+      assigned_employee_id: originalOrder.assignedEmployeeId,
+      subtotal: sub,
+      tax: tax,
+      tip: 0,
+      total: tot,
+      order_number: originalOrder.orderNumber ? `${originalOrder.orderNumber}-${suffix}` : null
+    });
+
+    try {
+      const { data: insertedOrders, error: insertError } = await supabase
+        .from('orders')
+        .insert([
+          mapToDb(subtotal1, tax1, total1, 'A'),
+          mapToDb(subtotal2, tax2, total2, 'B')
+        ])
+        .select();
+
+      if (insertError) throw insertError;
+
+      if (insertedOrders && insertedOrders.length === 2) {
+        const order1Id = insertedOrders[0].id;
+        const order2Id = insertedOrders[1].id;
+
+        const dbItems1 = items1.map(item => ({
+          order_id: order1Id,
+          item_name: item.product.name,
+          unit_price: item.product.price,
+          quantity: item.quantity,
+          alcohol_portion: item.notes?.startsWith('Alcohol: ') ? item.notes.replace('Alcohol: ', '') : null
+        }));
+
+        const dbItems2 = items2.map(item => ({
+          order_id: order2Id,
+          item_name: item.product.name,
+          unit_price: item.product.price,
+          quantity: item.quantity,
+          alcohol_portion: item.notes?.startsWith('Alcohol: ') ? item.notes.replace('Alcohol: ', '') : null
+        }));
+
+        const allDbItems = [...dbItems1, ...dbItems2];
+        if (allDbItems.length > 0) {
+          const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(allDbItems);
+
+          if (itemsError) throw itemsError;
+        }
+
+        insertedOrders[0].order_items = dbItems1;
+        insertedOrders[1].order_items = dbItems2;
+      }
+
+      const { error: deleteError } = await supabase
+        .from('orders')
+        .update({ status: 'Canceled' })
+        .eq('id', originalOrderId);
+
+      if (deleteError) throw deleteError;
+
+      setSelectedOrder(null);
+      if (insertedOrders) {
+        setSplitResultOrders(insertedOrders.map(mapDbOrderToAppOrder));
+      }
+      fetchOrders();
+    } catch (error) {
+      console.error('Error splitting order:', error);
+      alert('Error splitting order');
+    }
+  };
+
   const handleAddStaff = (employee: Omit<Employee, 'id'>) => {
     const newEmployee = { ...employee, id: `e${Date.now()}` };
     setStaff((prev) => [...prev, newEmployee]);
@@ -329,6 +450,7 @@ export default function App() {
             onUpdateStatus={handleUpdateOrderStatus}
             onUpdatePayment={handleUpdatePaymentStatus}
             onAssignStaff={handleAssignStaff}
+            onSplitOrder={handleSplitOrder}
             requireStaffAssignment={requireStaffAssignment}
           />
         )}
@@ -341,6 +463,18 @@ export default function App() {
             onAddStaff={handleAddStaff}
             onUpdateStaff={handleUpdateStaff}
             onRemoveStaff={handleRemoveStaff}
+          />
+        )}
+
+        {splitResultOrders && (
+          <SplitResultModal
+            orders={splitResultOrders}
+            staff={staff}
+            language={language}
+            onClose={() => setSplitResultOrders(null)}
+            onOrderClick={(order) => {
+              setSelectedOrder(order);
+            }}
           />
         )}
       </div>
