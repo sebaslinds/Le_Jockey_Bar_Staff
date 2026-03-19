@@ -238,22 +238,33 @@ export default function App() {
       ['Total payé (avec taxes et pourboires)', totalPaid.toFixed(2)],
       ['Total en attente (impayé)', totalUnpaid.toFixed(2)],
       [],
-      ['Détail des commandes payées'],
-      ['Numéro', 'Table', 'Sous-total', 'Taxes', 'Pourboire', 'Total', 'Assigné à']
+      ['Détail des commandes'],
+      ['Nom du drink', 'No. Order', 'Montant avant taxes', 'Montant après taxes', 'Taxes', 'Quantité', 'Statut de paiement', 'Employé assigné']
     ];
 
-    // Add paid orders details
-    orders.filter(o => o.paymentStatus === 'Paid').forEach(order => {
+    // Add order details per item
+    orders.forEach(order => {
       const employee = staff.find(s => s.id === order.assignedEmployeeId);
-      wsData.push([
-        order.orderNumber || order.id,
-        order.tableNumber,
-        order.subtotal.toFixed(2),
-        order.tax.toFixed(2),
-        order.tip.toFixed(2),
-        order.total.toFixed(2),
-        employee ? employee.name : 'Non assigné'
-      ]);
+      const employeeName = employee ? employee.name : 'Non assigné';
+      const orderNumber = order.orderNumber || order.id;
+      const paymentStatus = order.paymentStatus === 'Paid' ? 'Payé' : 'Impayé';
+
+      order.items.forEach(item => {
+        const itemTotalAfterTaxes = item.product.price * item.quantity;
+        const itemTotalBeforeTaxes = itemTotalAfterTaxes / 1.14975;
+        const itemTaxes = itemTotalAfterTaxes - itemTotalBeforeTaxes;
+
+        wsData.push([
+          item.product.name,
+          orderNumber,
+          itemTotalBeforeTaxes.toFixed(2),
+          itemTotalAfterTaxes.toFixed(2),
+          itemTaxes.toFixed(2),
+          item.quantity,
+          paymentStatus,
+          employeeName
+        ]);
+      });
     });
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
