@@ -121,7 +121,15 @@ export const TRANSLATIONS = {
     all: 'ALL',
     unassigned: 'UNASSIGNED',
     team: 'TEAM',
-    assignStaffFirst: 'Please assign an employee before setting the order to ready.'
+    assignStaffFirst: 'Please assign an employee before setting the order to ready.',
+    errorFetchingOrders: 'Error fetching orders: ',
+    errorFetchingStaff: 'Error fetching staff: ',
+    errorUpdatingOrder: 'Error updating order: ',
+    errorUpdatingPayment: 'Error updating payment: ',
+    errorAssigningStaff: 'Error assigning staff: ',
+    errorAddingStaff: 'Error adding staff: ',
+    errorUpdatingStaff: 'Error updating staff: ',
+    errorRemovingStaff: 'Error removing staff: '
   },
   fr: {
     dashboard: 'Tableau de bord',
@@ -167,7 +175,15 @@ export const TRANSLATIONS = {
     all: 'TOUS',
     unassigned: 'NON ASSIGNÉ',
     team: 'ÉQUIPE',
-    assignStaffFirst: 'Veuillez assigner un employé avant de mettre la commande prête.'
+    assignStaffFirst: 'Veuillez assigner un employé avant de mettre la commande prête.',
+    errorFetchingOrders: 'Erreur lors de la récupération des commandes : ',
+    errorFetchingStaff: 'Erreur lors de la récupération du personnel : ',
+    errorUpdatingOrder: 'Erreur lors de la mise à jour de la commande : ',
+    errorUpdatingPayment: 'Erreur lors de la mise à jour du paiement : ',
+    errorAssigningStaff: 'Erreur lors de l\'assignation du personnel : ',
+    errorAddingStaff: 'Erreur lors de l\'ajout du personnel : ',
+    errorUpdatingStaff: 'Erreur lors de la mise à jour du personnel : ',
+    errorRemovingStaff: 'Erreur lors de la suppression du personnel : '
   }
 };
 

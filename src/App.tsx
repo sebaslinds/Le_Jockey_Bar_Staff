@@ -8,8 +8,8 @@ import { OrderDetailModal } from './components/OrderDetailModal';
 import { StaffManagementModal } from './components/StaffManagementModal';
 import { StaffChatbot } from './components/StaffChatbot';
 import { Order, Employee, OrderStatus, PaymentStatus } from './types';
-import { MOCK_EMPLOYEES, Language } from './constants';
-import { Info, ChevronUp } from 'lucide-react';
+import { MOCK_EMPLOYEES, Language, TRANSLATIONS } from './constants';
+import { Info, ChevronUp, AlertCircle, X } from 'lucide-react';
 import { supabase } from './lib/supabase';
 
 const mapDbOrderToAppOrder = (order: any): Order => {
@@ -85,6 +85,14 @@ export default function App() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [requireStaffAssignment, setRequireStaffAssignment] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const showError = (message: string) => {
+    setError(message);
+    setTimeout(() => setError(null), 5000);
+  };
+
+  const t = TRANSLATIONS[language];
 
   const filteredOrders = useMemo(() => {
     if (activeFilter === 'all') return orders;
@@ -93,52 +101,62 @@ export default function App() {
   }, [orders, activeFilter]);
 
   const fetchStaff = React.useCallback(async () => {
-    // Try 'employees' table first, fallback to 'staff' if it fails
-    let { data, error } = await supabase.from('employees').select('*').order('name');
-    
-    if (error) {
-      console.log('Could not fetch from employees table, trying staff table...', error);
-      const staffRes = await supabase.from('staff').select('*').order('name');
-      data = staffRes.data;
-      error = staffRes.error;
-    }
+    try {
+      // Try 'employees' table first, fallback to 'staff' if it fails
+      let { data, error } = await supabase.from('employees').select('*').order('name');
+      
+      if (error) {
+        console.log('Could not fetch from employees table, trying staff table...', error);
+        const staffRes = await supabase.from('staff').select('*').order('name');
+        data = staffRes.data;
+        error = staffRes.error;
+      }
 
-    if (error) {
+      if (error) throw error;
+      
+      if (data) {
+        const formattedStaff = data.map((e: any) => ({
+          id: String(e.id),
+          name: e.name,
+          role: e.role || 'Staff',
+          avatarUrl: e.avatar_url || e.avatarUrl
+        }));
+        setStaff(formattedStaff);
+      }
+    } catch (error: any) {
       console.error('Error fetching staff:', error);
+      showError(`${t.errorFetchingStaff}${error.message || 'Network error'}`);
       // Fallback to mock if both fail so the app doesn't break
       if (staff.length === 0) setStaff(MOCK_EMPLOYEES);
-    } else if (data) {
-      const formattedStaff = data.map((e: any) => ({
-        id: String(e.id),
-        name: e.name,
-        role: e.role || 'Staff',
-        avatarUrl: e.avatar_url || e.avatarUrl
-      }));
-      setStaff(formattedStaff);
     }
-  }, [staff.length]);
+  }, [staff.length, t.errorFetchingStaff]);
 
   const fetchOrders = React.useCallback(async () => {
-    const { data, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        order_items (*)
-      `)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (*)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (data) {
+        const formattedOrders = data.map(mapDbOrderToAppOrder);
+        setOrders(formattedOrders);
+        setSelectedOrder(prev => {
+          if (!prev) return null;
+          const updated = formattedOrders.find(o => o.id === prev.id);
+          return updated || prev;
+        });
+      }
+    } catch (error: any) {
       console.error('Error fetching orders:', error);
-    } else if (data) {
-      const formattedOrders = data.map(mapDbOrderToAppOrder);
-      setOrders(formattedOrders);
-      setSelectedOrder(prev => {
-        if (!prev) return null;
-        const updated = formattedOrders.find(o => o.id === prev.id);
-        return updated || prev;
-      });
+      showError(`${t.errorFetchingOrders}${error.message || 'Network error'}`);
     }
-  }, []);
+  }, [t.errorFetchingOrders]);
 
   useEffect(() => {
     fetchOrders();
@@ -247,6 +265,9 @@ export default function App() {
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    const previousOrder = orders.find(o => String(o.id) === String(orderId));
+    if (!previousOrder) return;
+
     // Optimistic update
     setOrders((prev) =>
       prev.map((o) => (String(o.id) === String(orderId) ? { ...o, status, updatedAt: new Date().toISOString() } : o))
@@ -255,19 +276,31 @@ export default function App() {
       setSelectedOrder((prev) => (prev ? { ...prev, status } : null));
     }
 
-    // Push to Supabase
-    const { error } = await supabase
-      .from('orders')
-      .update({ status })
-      .eq('id', orderId);
-      
-    if (error) {
+    try {
+      // Push to Supabase
+      const { error } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', orderId);
+        
+      if (error) throw error;
+    } catch (error: any) {
       console.error('Error updating order status:', error);
-      // Ideally, revert optimistic update here if needed
+      showError(`${t.errorUpdatingOrder}${error.message || 'Network error'}`);
+      // Revert optimistic update
+      setOrders((prev) =>
+        prev.map((o) => (String(o.id) === String(orderId) ? previousOrder : o))
+      );
+      if (selectedOrder && String(selectedOrder.id) === String(orderId)) {
+        setSelectedOrder(previousOrder);
+      }
     }
   };
 
   const handleUpdatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus) => {
+    const previousOrder = orders.find(o => String(o.id) === String(orderId));
+    if (!previousOrder) return;
+
     // Optimistic update
     setOrders((prev) =>
       prev.map((o) => (String(o.id) === String(orderId) ? { ...o, paymentStatus, updatedAt: new Date().toISOString() } : o))
@@ -276,18 +309,31 @@ export default function App() {
       setSelectedOrder((prev) => (prev ? { ...prev, paymentStatus } : null));
     }
 
-    // Push to Supabase
-    const { error } = await supabase
-      .from('orders')
-      .update({ payment_status: paymentStatus })
-      .eq('id', orderId);
-      
-    if (error) {
+    try {
+      // Push to Supabase
+      const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: paymentStatus })
+        .eq('id', orderId);
+        
+      if (error) throw error;
+    } catch (error: any) {
       console.error('Error updating payment status:', error);
+      showError(`${t.errorUpdatingPayment}${error.message || 'Network error'}`);
+      // Revert optimistic update
+      setOrders((prev) =>
+        prev.map((o) => (String(o.id) === String(orderId) ? previousOrder : o))
+      );
+      if (selectedOrder && String(selectedOrder.id) === String(orderId)) {
+        setSelectedOrder(previousOrder);
+      }
     }
   };
 
   const handleAssignStaff = async (orderId: string, employeeId: string) => {
+    const previousOrder = orders.find(o => String(o.id) === String(orderId));
+    if (!previousOrder) return;
+
     // Optimistic update
     setOrders((prev) =>
       prev.map((o) => (String(o.id) === String(orderId) ? { ...o, assignedEmployeeId: employeeId, updatedAt: new Date().toISOString() } : o))
@@ -296,82 +342,93 @@ export default function App() {
       setSelectedOrder((prev) => (prev ? { ...prev, assignedEmployeeId: employeeId } : null));
     }
 
-    // Push to Supabase
-    const { error } = await supabase
-      .from('orders')
-      .update({ assigned_employee_id: employeeId })
-      .eq('id', orderId);
-      
-    if (error) {
+    try {
+      // Push to Supabase
+      const { error } = await supabase
+        .from('orders')
+        .update({ assigned_employee_id: employeeId })
+        .eq('id', orderId);
+        
+      if (error) throw error;
+    } catch (error: any) {
       console.error('Error assigning staff:', error);
+      showError(`${t.errorAssigningStaff}${error.message || 'Network error'}`);
+      // Revert optimistic update
+      setOrders((prev) =>
+        prev.map((o) => (String(o.id) === String(orderId) ? previousOrder : o))
+      );
+      if (selectedOrder && String(selectedOrder.id) === String(orderId)) {
+        setSelectedOrder(previousOrder);
+      }
     }
   };
 
   const handleAddStaff = async (employee: Omit<Employee, 'id'>) => {
-    // Try employees table first
-    let { error } = await supabase.from('employees').insert([{
-      name: employee.name,
-      role: employee.role,
-      avatar_url: employee.avatarUrl
-    }]);
-
-    if (error) {
-      // Fallback to staff table
-      const staffRes = await supabase.from('staff').insert([{
+    try {
+      // Try employees table first
+      let { error } = await supabase.from('employees').insert([{
         name: employee.name,
         role: employee.role,
         avatar_url: employee.avatarUrl
       }]);
-      error = staffRes.error;
-    }
 
-    if (error) {
-      console.error('Error adding staff:', error);
-      // Fallback to local state if DB fails
-      const newEmployee = { ...employee, id: `e${Date.now()}` };
-      setStaff((prev) => [...prev, newEmployee]);
-    } else {
+      if (error) {
+        // Fallback to staff table
+        const staffRes = await supabase.from('staff').insert([{
+          name: employee.name,
+          role: employee.role,
+          avatar_url: employee.avatarUrl
+        }]);
+        error = staffRes.error;
+      }
+
+      if (error) throw error;
       fetchStaff();
+    } catch (error: any) {
+      console.error('Error adding staff:', error);
+      showError(`${t.errorAddingStaff}${error.message || 'Network error'}`);
     }
   };
 
   const handleUpdateStaff = async (employee: Employee) => {
-    let { error } = await supabase.from('employees').update({
-      name: employee.name,
-      role: employee.role,
-      avatar_url: employee.avatarUrl
-    }).eq('id', employee.id);
-
-    if (error) {
-      const staffRes = await supabase.from('staff').update({
+    try {
+      let { error } = await supabase.from('employees').update({
         name: employee.name,
         role: employee.role,
         avatar_url: employee.avatarUrl
       }).eq('id', employee.id);
-      error = staffRes.error;
-    }
 
-    if (error) {
-      console.error('Error updating staff:', error);
-      setStaff((prev) => prev.map((e) => (e.id === employee.id ? employee : e)));
-    } else {
+      if (error) {
+        const staffRes = await supabase.from('staff').update({
+          name: employee.name,
+          role: employee.role,
+          avatar_url: employee.avatarUrl
+        }).eq('id', employee.id);
+        error = staffRes.error;
+      }
+
+      if (error) throw error;
       fetchStaff();
+    } catch (error: any) {
+      console.error('Error updating staff:', error);
+      showError(`${t.errorUpdatingStaff}${error.message || 'Network error'}`);
     }
   };
 
   const handleRemoveStaff = async (id: string) => {
-    let { error } = await supabase.from('employees').delete().eq('id', id);
+    try {
+      let { error } = await supabase.from('employees').delete().eq('id', id);
 
-    if (error) {
-      const staffRes = await supabase.from('staff').delete().eq('id', id);
-      error = staffRes.error;
-    }
+      if (error) {
+        const staffRes = await supabase.from('staff').delete().eq('id', id);
+        error = staffRes.error;
+      }
 
-    if (error) {
-      console.error('Error removing staff:', error);
-      setStaff((prev) => prev.filter((e) => e.id !== id));
-    } else {
+      if (error) throw error;
       fetchStaff();
+    } catch (error: any) {
+      console.error('Error removing staff:', error);
+      showError(`${t.errorRemovingStaff}${error.message || 'Network error'}`);
     }
   };
 
@@ -443,6 +500,22 @@ export default function App() {
             onUpdateStaff={handleUpdateStaff}
             onRemoveStaff={handleRemoveStaff}
           />
+        )}
+
+        {/* Error Toast */}
+        {error && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-5 fade-in duration-300">
+            <div className="bg-brand-surface border border-red-500/50 text-red-500 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 max-w-md">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p className="text-sm font-medium">{error}</p>
+              <button 
+                onClick={() => setError(null)}
+                className="p-1 hover:bg-red-500/10 rounded-md transition-colors ml-2"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </Auth>
