@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Loader2, Sparkles } from 'lucide-react';
-import { Order, OrderStatus, Employee } from '../types';
+import { Order, OrderStatus, Employee, PaymentStatus } from '../types';
 import { processChatbotMessage } from '../services/gemini';
 import { Language, TRANSLATIONS } from '../constants';
 import { clsx } from 'clsx';
@@ -10,6 +10,7 @@ interface StaffChatbotProps {
   orders: Order[];
   staff: Employee[];
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  onUpdatePaymentStatus: (orderId: string, status: PaymentStatus) => void;
   language: Language;
 }
 
@@ -19,7 +20,7 @@ interface Message {
   content: string;
 }
 
-export function StaffChatbot({ orders, staff, onUpdateOrderStatus, language }: StaffChatbotProps) {
+export function StaffChatbot({ orders, staff, onUpdateOrderStatus, onUpdatePaymentStatus, language }: StaffChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', role: 'assistant', content: 'Hello! I am your Staff Assistant. How can I help you manage the floor today?' }
@@ -45,7 +46,7 @@ export function StaffChatbot({ orders, staff, onUpdateOrderStatus, language }: S
     setInput('');
     setIsLoading(true);
 
-    const responseText = await processChatbotMessage(userMsg.content, orders, staff, onUpdateOrderStatus);
+    const responseText = await processChatbotMessage(userMsg.content, orders, staff, onUpdateOrderStatus, onUpdatePaymentStatus);
 
     const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: responseText };
     setMessages(prev => [...prev, aiMsg]);
