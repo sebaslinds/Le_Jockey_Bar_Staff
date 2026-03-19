@@ -76,7 +76,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('fr'); // Default to FR based on image
   const [activeFilter, setActiveFilter] = useState('all');
   const [orders, setOrders] = useState<Order[]>([]);
-  const [staff, setStaff] = useState<Employee[]>(MOCK_EMPLOYEES);
+  const [staff, setStaff] = useState<Employee[]>([]);
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [requireStaffAssignment, setRequireStaffAssignment] = useState(false);
@@ -87,6 +87,32 @@ export default function App() {
     if (activeFilter === 'unassigned') return orders.filter(o => !o.assignedEmployeeId);
     return orders.filter(o => String(o.assignedEmployeeId) === String(activeFilter));
   }, [orders, activeFilter]);
+
+  const fetchStaff = React.useCallback(async () => {
+    // Try 'employees' table first, fallback to 'staff' if it fails
+    let { data, error } = await supabase.from('employees').select('*').order('name');
+    
+    if (error) {
+      console.log('Could not fetch from employees table, trying staff table...', error);
+      const staffRes = await supabase.from('staff').select('*').order('name');
+      data = staffRes.data;
+      error = staffRes.error;
+    }
+
+    if (error) {
+      console.error('Error fetching staff:', error);
+      // Fallback to mock if both fail so the app doesn't break
+      if (staff.length === 0) setStaff(MOCK_EMPLOYEES);
+    } else if (data) {
+      const formattedStaff = data.map((e: any) => ({
+        id: String(e.id),
+        name: e.name,
+        role: e.role || 'Staff',
+        avatarUrl: e.avatar_url || e.avatarUrl
+      }));
+      setStaff(formattedStaff);
+    }
+  }, [staff.length]);
 
   const fetchOrders = React.useCallback(async () => {
     const { data, error } = await supabase
@@ -112,6 +138,7 @@ export default function App() {
 
   useEffect(() => {
     fetchOrders();
+    fetchStaff();
 
     // Subscribe to real-time changes
     const ordersSubscription = supabase
@@ -128,11 +155,27 @@ export default function App() {
       })
       .subscribe();
 
+    const employeesSubscription = supabase
+      .channel('public:employees')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => {
+        fetchStaff();
+      })
+      .subscribe();
+
+    const staffSubscription = supabase
+      .channel('public:staff')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => {
+        fetchStaff();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersSubscription);
       supabase.removeChannel(orderItemsSubscription);
+      supabase.removeChannel(employeesSubscription);
+      supabase.removeChannel(staffSubscription);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, fetchStaff]);
 
   const metrics = useMemo(() => {
     return orders.reduce(
@@ -260,17 +303,72 @@ export default function App() {
     }
   };
 
-  const handleAddStaff = (employee: Omit<Employee, 'id'>) => {
-    const newEmployee = { ...employee, id: `e${Date.now()}` };
-    setStaff((prev) => [...prev, newEmployee]);
+  const handleAddStaff = async (employee: Omit<Employee, 'id'>) => {
+    // Try employees table first
+    let { error } = await supabase.from('employees').insert([{
+      name: employee.name,
+      role: employee.role,
+      avatar_url: employee.avatarUrl
+    }]);
+
+    if (error) {
+      // Fallback to staff table
+      const staffRes = await supabase.from('staff').insert([{
+        name: employee.name,
+        role: employee.role,
+        avatar_url: employee.avatarUrl
+      }]);
+      error = staffRes.error;
+    }
+
+    if (error) {
+      console.error('Error adding staff:', error);
+      // Fallback to local state if DB fails
+      const newEmployee = { ...employee, id: `e${Date.now()}` };
+      setStaff((prev) => [...prev, newEmployee]);
+    } else {
+      fetchStaff();
+    }
   };
 
-  const handleUpdateStaff = (employee: Employee) => {
-    setStaff((prev) => prev.map((e) => (e.id === employee.id ? employee : e)));
+  const handleUpdateStaff = async (employee: Employee) => {
+    let { error } = await supabase.from('employees').update({
+      name: employee.name,
+      role: employee.role,
+      avatar_url: employee.avatarUrl
+    }).eq('id', employee.id);
+
+    if (error) {
+      const staffRes = await supabase.from('staff').update({
+        name: employee.name,
+        role: employee.role,
+        avatar_url: employee.avatarUrl
+      }).eq('id', employee.id);
+      error = staffRes.error;
+    }
+
+    if (error) {
+      console.error('Error updating staff:', error);
+      setStaff((prev) => prev.map((e) => (e.id === employee.id ? employee : e)));
+    } else {
+      fetchStaff();
+    }
   };
 
-  const handleRemoveStaff = (id: string) => {
-    setStaff((prev) => prev.filter((e) => e.id !== id));
+  const handleRemoveStaff = async (id: string) => {
+    let { error } = await supabase.from('employees').delete().eq('id', id);
+
+    if (error) {
+      const staffRes = await supabase.from('staff').delete().eq('id', id);
+      error = staffRes.error;
+    }
+
+    if (error) {
+      console.error('Error removing staff:', error);
+      setStaff((prev) => prev.filter((e) => e.id !== id));
+    } else {
+      fetchStaff();
+    }
   };
 
   return (

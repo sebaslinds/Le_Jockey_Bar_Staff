@@ -68,41 +68,55 @@ export function StaffManagementModal({
           {/* Add/Edit Form */}
           <div className="bg-brand-bg/50 border border-brand-border rounded-xl p-5 shrink-0">
             <h3 className="text-lg font-serif text-brand-accent mb-4">
-              {editingId ? 'Edit Employee' : t.addEmployee}
+              {editingId ? t.editEmployee : t.addEmployee}
             </h3>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder={t.name}
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-brand-text focus:outline-none focus:border-brand-accent transition-colors min-w-0"
-              />
-              <input
-                type="text"
-                placeholder={t.role}
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-brand-text focus:outline-none focus:border-brand-accent transition-colors min-w-0"
-              />
-              <div className="flex gap-2 shrink-0">
-                <button
-                  onClick={handleSave}
-                  className="bg-brand-accent hover:bg-brand-accent-hover text-brand-bg font-semibold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder={t.name}
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-brand-text focus:outline-none focus:border-brand-accent transition-colors min-w-0"
+                />
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-brand-text focus:outline-none focus:border-brand-accent transition-colors min-w-0 appearance-none"
                 >
-                  {editingId ? t.save : <><Plus className="w-4 h-4" /> {t.addEmployee}</>}
-                </button>
-                {editingId && (
+                  <option value="" disabled>{t.role}</option>
+                  <option value="Serveur">{t.server}</option>
+                  <option value="Barman">{t.bartender}</option>
+                  <option value="Cuisine">{t.kitchen}</option>
+                </select>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder={t.avatarUrl + " (Optionnel)"}
+                  value={formData.avatarUrl}
+                  onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                  className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-brand-text focus:outline-none focus:border-brand-accent transition-colors min-w-0"
+                />
+                <div className="flex gap-2 shrink-0">
                   <button
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({ name: '', role: '', avatarUrl: '' });
-                    }}
-                    className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    onClick={handleSave}
+                    className="bg-brand-accent hover:bg-brand-accent-hover text-brand-bg font-semibold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                   >
-                    {t.cancel}
+                    {editingId ? t.save : <><Plus className="w-4 h-4" /> {t.addEmployee}</>}
                   </button>
-                )}
+                  {editingId && (
+                    <button
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormData({ name: '', role: '', avatarUrl: '' });
+                      }}
+                      className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      {t.cancel}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

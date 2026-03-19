@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { Globe, Menu } from 'lucide-react';
@@ -18,10 +18,22 @@ interface TopBarProps {
 export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilter, staff, onOpenStaffModal }: TopBarProps) {
   const t = TRANSLATIONS[language];
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const dateLocale = language === 'fr' ? fr : enUS;
@@ -35,9 +47,28 @@ export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilt
   return (
     <header className="h-20 bg-brand-bg border-b border-brand-border flex items-center justify-between px-6 shrink-0">
       <div className="flex items-center gap-6">
-        <button className="p-2 hover:bg-brand-surface rounded-lg transition-colors">
-          <Menu className="w-6 h-6 text-brand-text" />
-        </button>
+        <div className="relative" ref={menuRef}>
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-2 hover:bg-brand-surface rounded-lg transition-colors"
+          >
+            <Menu className="w-6 h-6 text-brand-text" />
+          </button>
+          
+          {isMenuOpen && (
+            <div className="absolute top-full left-0 mt-2 w-48 bg-brand-surface border border-brand-border rounded-xl shadow-xl py-2 z-50">
+              <button
+                onClick={() => {
+                  onOpenStaffModal();
+                  setIsMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-brand-text hover:bg-brand-bg transition-colors font-medium"
+              >
+                {t.team}
+              </button>
+            </div>
+          )}
+        </div>
         
         <div className="flex items-center gap-2 h-12">
           {/* Replace this src with your actual logo filename once uploaded (e.g., /logo.png or /logo.svg) */}
@@ -85,12 +116,6 @@ export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilt
             {filter.label}
           </button>
         ))}
-        <button
-          onClick={onOpenStaffModal}
-          className="px-4 py-1.5 text-xs font-medium uppercase tracking-wider transition-colors border rounded-md bg-transparent text-neutral-400 border-brand-border hover:border-neutral-500"
-        >
-          {t.team}
-        </button>
       </div>
 
       <div className="flex items-center gap-6">
