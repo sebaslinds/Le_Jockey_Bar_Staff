@@ -22,7 +22,7 @@ interface Message {
 export function StaffChatbot({ orders, staff, onUpdateOrderStatus, language }: StaffChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', role: 'assistant', content: 'Hello! I am BarCommand AI. How can I help you manage the floor today?' }
+    { id: '1', role: 'assistant', content: 'Hello! I am your Staff Assistant. How can I help you manage the floor today?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -82,7 +82,7 @@ export function StaffChatbot({ orders, staff, onUpdateOrderStatus, language }: S
                 <div className="w-8 h-8 rounded-full bg-brand-accent/20 flex items-center justify-center border border-brand-accent/50">
                   <MessageSquare className="w-4 h-4 text-brand-accent" />
                 </div>
-                <h3 className="font-serif font-medium text-brand-text">BarCommand AI</h3>
+                <h3 className="font-serif font-medium text-brand-text">{t.chatbotTitle}</h3>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
@@ -104,7 +104,9 @@ export function StaffChatbot({ orders, staff, onUpdateOrderStatus, language }: S
                       : "bg-brand-surface border border-brand-border text-brand-text mr-auto rounded-bl-sm"
                   )}
                 >
-                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed">
+                    {msg.id === '1' ? t.chatbotInitialMessage : msg.content}
+                  </p>
                 </div>
               ))}
               {isLoading && (
