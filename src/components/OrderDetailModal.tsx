@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus, PaymentStatus, Employee } from '../types';
 import { Language, TRANSLATIONS, ORDER_STATUSES } from '../constants';
-import { X, UserPlus, CheckCircle, CreditCard, SplitSquareHorizontal } from 'lucide-react';
+import { X, UserPlus, CheckCircle, CreditCard } from 'lucide-react';
 import { clsx } from 'clsx';
-import { SplitBillModal, SplitData } from './SplitBillModal';
 
 interface OrderDetailModalProps {
   order: Order | null;
@@ -13,7 +12,6 @@ interface OrderDetailModalProps {
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onUpdatePayment: (orderId: string, status: PaymentStatus) => void;
   onAssignStaff: (orderId: string, employeeId: string) => void;
-  onSplitOrder?: (orderId: string, splitData: SplitData) => void;
   requireStaffAssignment?: boolean;
 }
 
@@ -25,11 +23,9 @@ export function OrderDetailModal({
   onUpdateStatus,
   onUpdatePayment,
   onAssignStaff,
-  onSplitOrder,
   requireStaffAssignment = false,
 }: OrderDetailModalProps) {
   const [localRequireStaff, setLocalRequireStaff] = useState(requireStaffAssignment);
-  const [isSplitting, setIsSplitting] = useState(false);
 
   React.useEffect(() => {
     setLocalRequireStaff(requireStaffAssignment);
@@ -61,15 +57,6 @@ export function OrderDetailModal({
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              {onSplitOrder && (
-                <button
-                  onClick={() => setIsSplitting(true)}
-                  className="p-2 rounded-full hover:bg-brand-border transition-colors text-neutral-400 hover:text-brand-accent flex items-center gap-2"
-                  title={language === 'fr' ? 'Séparer la facture' : 'Split Bill'}
-                >
-                  <SplitSquareHorizontal className="w-5 h-5" />
-                </button>
-              )}
               <button
                 onClick={onClose}
                 className="p-2 rounded-full hover:bg-brand-border transition-colors text-neutral-400 hover:text-brand-text"
@@ -225,18 +212,6 @@ export function OrderDetailModal({
         </div>
       </div>
       </div>
-
-      {isSplitting && onSplitOrder && (
-        <SplitBillModal
-          order={order}
-          language={language}
-          onClose={() => setIsSplitting(false)}
-          onConfirmSplit={(data) => {
-            onSplitOrder(order.id, data);
-            setIsSplitting(false);
-          }}
-        />
-      )}
     </>
   );
 }

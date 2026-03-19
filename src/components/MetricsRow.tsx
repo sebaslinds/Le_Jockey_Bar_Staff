@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, FileText, DollarSign, CreditCard, Coins } from 'lucide-react';
+import { RefreshCw, FileText, DollarSign, CreditCard } from 'lucide-react';
 import { Language, TRANSLATIONS } from '../constants';
 
 interface MetricsRowProps {
@@ -51,24 +51,6 @@ export function MetricsRow({ language, metrics, onRefresh, onOpenReports }: Metr
         </div>
         <div className="w-12 h-12 rounded-full border border-red-500/20 bg-red-500/5 flex items-center justify-center">
           <CreditCard className="w-5 h-5 text-red-500" />
-        </div>
-      </div>
-
-      {/* Tips */}
-      <div className="flex-1 bg-brand-surface border border-brand-border border-l-4 border-l-brand-accent p-6 flex items-center justify-between">
-        <div>
-          <h3 className="text-[10px] font-medium text-neutral-400 uppercase tracking-widest mb-2">
-            {t.tips}
-          </h3>
-          <div className="flex items-baseline gap-1">
-            <span className="text-brand-accent font-serif text-3xl font-bold">$</span>
-            <span className="font-serif text-4xl font-bold text-brand-text">
-              {metrics.tips.toFixed(2)}
-            </span>
-          </div>
-        </div>
-        <div className="w-12 h-12 rounded-full border border-brand-accent/20 bg-brand-accent/5 flex items-center justify-center">
-          <Coins className="w-5 h-5 text-brand-accent" />
         </div>
       </div>
 
