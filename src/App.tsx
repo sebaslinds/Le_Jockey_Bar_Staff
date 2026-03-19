@@ -22,7 +22,11 @@ const mapDbOrderToAppOrder = (order: any): Order => {
       price: Number(item.unit_price),
       category: 'Drink'
     },
-    notes: item.alcohol_portion ? `Alcohol: ${item.alcohol_portion}` : undefined
+    notes: [
+      item.alcohol_choice ? `Alcool: ${item.alcohol_choice}` : null,
+      item.alcohol_portion ? `Portion: ${item.alcohol_portion}` : null,
+      item.flavor_profile ? `Profil: ${item.flavor_profile}` : null
+    ].filter(Boolean).join(' | ') || undefined
   }));
 
   let normalizedStatus = order.status;
