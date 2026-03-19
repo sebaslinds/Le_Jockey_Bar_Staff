@@ -25,23 +25,23 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, language, onClick, 
       onClick={onClick}
       className="bg-brand-surface border border-brand-border rounded-sm p-4 cursor-grab active:cursor-grabbing hover:border-brand-accent/50 transition-colors shadow-sm group"
     >
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <span className="text-xs font-mono text-neutral-500 block mb-1">
+      <div className="flex justify-between items-start mb-3 gap-2">
+        <div className="min-w-0 flex-1">
+          <span className="text-xs font-mono text-neutral-500 block mb-1 truncate">
             {order.orderNumber ? `#${order.orderNumber}` : order.id}
           </span>
-          <h3 className="font-serif text-lg text-brand-text">
+          <h3 className="font-serif text-lg text-brand-text truncate">
             {order.tableNumber.toLowerCase() === 'takeout' ? t.takeout : `${t.table} ${order.tableNumber}`}
           </h3>
           {order.customerName && (
             <div className="text-sm text-neutral-400 mt-0.5 flex items-center gap-1">
-              <User className="w-3 h-3" />
-              {order.customerName}
+              <User className="w-3 h-3 shrink-0" />
+              <span className="truncate">{order.customerName}</span>
             </div>
           )}
         </div>
         <div className={clsx(
-          "px-2 py-1 rounded text-[10px] font-mono uppercase tracking-wider border",
+          "shrink-0 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-wider border",
           isPaid 
             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
             : "bg-amber-500/10 text-amber-400 border-amber-500/20"

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Employee } from '../types';
 import { Language, TRANSLATIONS } from '../constants';
-import { X, Plus, Trash2, Edit2 } from 'lucide-react';
+import { X, Plus, Trash2, Edit2, Upload } from 'lucide-react';
 
 interface StaffManagementModalProps {
   staff: Employee[];
@@ -40,6 +40,17 @@ export function StaffManagementModal({
   const handleEdit = (employee: Employee) => {
     setEditingId(employee.id);
     setFormData({ name: employee.name, role: employee.role, avatarUrl: employee.avatarUrl || '' });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, avatarUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -91,13 +102,24 @@ export function StaffManagementModal({
                 </select>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text"
-                  placeholder={t.avatarUrl + " (Optionnel)"}
-                  value={formData.avatarUrl}
-                  onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                  className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-brand-text focus:outline-none focus:border-brand-accent transition-colors min-w-0"
-                />
+                <div className="flex-1 flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t.avatarUrl + " (Optionnel)"}
+                    value={formData.avatarUrl}
+                    onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                    className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-4 py-2 text-brand-text focus:outline-none focus:border-brand-accent transition-colors min-w-0"
+                  />
+                  <label className="flex items-center justify-center bg-brand-surface border border-brand-border hover:border-brand-accent rounded-lg px-4 cursor-pointer transition-colors text-neutral-400 hover:text-brand-accent">
+                    <Upload className="w-5 h-5" />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={handleSave}
