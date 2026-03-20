@@ -22,6 +22,8 @@ const mapDbOrderToAppOrder = (order: any): Order => {
       price: Number(item.unit_price),
       category: 'Drink'
     },
+    alcoholChoice: item.alcohol_choice || undefined,
+    alcoholPortion: item.alcohol_portion || undefined,
     notes: [
       item.alcohol_choice ? `Alcool: ${item.alcohol_choice}` : null,
       item.alcohol_portion ? `Portion: ${item.alcohol_portion}` : null,
@@ -239,7 +241,7 @@ export default function App() {
       ['Total en attente (impayé)', totalUnpaid.toFixed(2)],
       [],
       ['Détail des commandes'],
-      ['Nom du drink', 'No. Order', 'Montant avant taxes', 'Montant après taxes', 'Taxes', 'Quantité', 'Statut de paiement', 'Employé assigné']
+      ['Nom du drink', 'Choix d\'alcool', 'Portion d\'alcool', 'No. Order', 'Montant avant taxes', 'Montant après taxes', 'Taxes', 'Quantité', 'Statut de paiement', 'Employé assigné']
     ];
 
     // Add order details per item
@@ -256,6 +258,8 @@ export default function App() {
 
         wsData.push([
           item.product.name,
+          item.alcoholChoice || '',
+          item.alcoholPortion || '',
           orderNumber,
           itemTotalBeforeTaxes.toFixed(2),
           itemTotalAfterTaxes.toFixed(2),

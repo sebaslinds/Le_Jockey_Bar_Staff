@@ -20,6 +20,8 @@ export interface OrderItem {
   product: Product;
   quantity: number;
   notes?: string;
+  alcoholChoice?: string;
+  alcoholPortion?: string;
 }
 
 export interface Order {
