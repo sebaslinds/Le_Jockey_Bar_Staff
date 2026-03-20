@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Loader2, Sparkles } from 'lucide-react';
-import { Order, OrderStatus, Employee, PaymentStatus } from '../types';
+import { Order, OrderStatus, Employee } from '../types';
 import { processChatbotMessage } from '../services/gemini';
 import { Language, TRANSLATIONS } from '../constants';
 import { clsx } from 'clsx';
@@ -10,7 +10,6 @@ interface StaffChatbotProps {
   orders: Order[];
   staff: Employee[];
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
-  onUpdatePaymentStatus: (orderId: string, status: PaymentStatus) => void;
   language: Language;
 }
 
@@ -20,10 +19,10 @@ interface Message {
   content: string;
 }
 
-export function StaffChatbot({ orders, staff, onUpdateOrderStatus, onUpdatePaymentStatus, language }: StaffChatbotProps) {
+export function StaffChatbot({ orders, staff, onUpdateOrderStatus, language }: StaffChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', role: 'assistant', content: 'Hello! I am your Staff Assistant. How can I help you manage the floor today?' }
+    { id: '1', role: 'assistant', content: 'Hello! I am BarCommand AI. How can I help you manage the floor today?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +45,7 @@ export function StaffChatbot({ orders, staff, onUpdateOrderStatus, onUpdatePayme
     setInput('');
     setIsLoading(true);
 
-    const responseText = await processChatbotMessage(userMsg.content, orders, staff, onUpdateOrderStatus, onUpdatePaymentStatus);
+    const responseText = await processChatbotMessage(userMsg.content, orders, staff, onUpdateOrderStatus);
 
     const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: responseText };
     setMessages(prev => [...prev, aiMsg]);
@@ -83,7 +82,7 @@ export function StaffChatbot({ orders, staff, onUpdateOrderStatus, onUpdatePayme
                 <div className="w-8 h-8 rounded-full bg-brand-accent/20 flex items-center justify-center border border-brand-accent/50">
                   <MessageSquare className="w-4 h-4 text-brand-accent" />
                 </div>
-                <h3 className="font-serif font-medium text-brand-text">{t.chatbotTitle}</h3>
+                <h3 className="font-serif font-medium text-brand-text">BarCommand AI</h3>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
@@ -105,9 +104,7 @@ export function StaffChatbot({ orders, staff, onUpdateOrderStatus, onUpdatePayme
                       : "bg-brand-surface border border-brand-border text-brand-text mr-auto rounded-bl-sm"
                   )}
                 >
-                  <p className="whitespace-pre-wrap leading-relaxed">
-                    {msg.id === '1' ? t.chatbotInitialMessage : msg.content}
-                  </p>
+                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                 </div>
               ))}
               {isLoading && (
