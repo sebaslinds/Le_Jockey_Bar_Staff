@@ -6,9 +6,8 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function test() {
-  const { data, error } = await supabase.from('orders').select('*');
-  console.log('Orders:', data);
-  if (error) console.error('Error:', error);
+  const { data, error } = await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  console.log('Delete result:', data, error);
 }
 
 test();

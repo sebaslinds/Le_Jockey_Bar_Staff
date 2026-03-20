@@ -125,7 +125,10 @@ export default function App() {
       }
     } catch (error: any) {
       console.error('Error fetching staff:', error);
-      showError(`${t.errorFetchingStaff}${error.message || 'Network error'}`);
+      const errorMsg = error.message || 'Network error';
+      const details = error.details ? `\nDétails: ${error.details}` : '';
+      const hint = error.hint ? `\nIndice: ${error.hint}` : '';
+      showError(`${t.errorFetchingStaff}${errorMsg}${details}${hint}`);
       // Fallback to mock if both fail so the app doesn't break
       if (staff.length === 0) setStaff(MOCK_EMPLOYEES);
     }
@@ -154,7 +157,10 @@ export default function App() {
       }
     } catch (error: any) {
       console.error('Error fetching orders:', error);
-      showError(`${t.errorFetchingOrders}${error.message || 'Network error'}`);
+      const errorMsg = error.message || 'Network error';
+      const details = error.details ? `\nDétails: ${error.details}` : '';
+      const hint = error.hint ? `\nIndice: ${error.hint}` : '';
+      showError(`${t.errorFetchingOrders}${errorMsg}${details}${hint}`);
     }
   }, [t.errorFetchingOrders]);
 
@@ -238,22 +244,50 @@ export default function App() {
       ['Total payé (avec taxes et pourboires)', totalPaid.toFixed(2)],
       ['Total en attente (impayé)', totalUnpaid.toFixed(2)],
       [],
-      ['Détail des commandes payées'],
-      ['Numéro', 'Table', 'Sous-total', 'Taxes', 'Pourboire', 'Total', 'Assigné à']
+      ['Détail des commandes'],
+      ['Numéro', 'Table', 'Statut', 'Paiement', 'Sous-total', 'Taxes', 'Pourboire', 'Total', 'Assigné à', 'Article', 'Quantité', 'Prix Unitaire', 'Notes']
     ];
 
-    // Add paid orders details
-    orders.filter(o => o.paymentStatus === 'Paid').forEach(order => {
+    // Add all orders details
+    orders.forEach(order => {
       const employee = staff.find(s => s.id === order.assignedEmployeeId);
-      wsData.push([
-        order.orderNumber || order.id,
-        order.tableNumber,
-        order.subtotal.toFixed(2),
-        order.tax.toFixed(2),
-        order.tip.toFixed(2),
-        order.total.toFixed(2),
-        employee ? employee.name : 'Non assigné'
-      ]);
+      const employeeName = employee ? employee.name : 'Non assigné';
+      
+      if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+          wsData.push([
+            order.orderNumber || order.id,
+            order.tableNumber,
+            order.status,
+            order.paymentStatus,
+            order.subtotal.toFixed(2),
+            order.tax.toFixed(2),
+            order.tip.toFixed(2),
+            order.total.toFixed(2),
+            employeeName,
+            item.product?.name || 'Produit inconnu',
+            item.quantity,
+            item.product?.price?.toFixed(2) || '0.00',
+            item.notes || ''
+          ]);
+        });
+      } else {
+        wsData.push([
+          order.orderNumber || order.id,
+          order.tableNumber,
+          order.status,
+          order.paymentStatus,
+          order.subtotal.toFixed(2),
+          order.tax.toFixed(2),
+          order.tip.toFixed(2),
+          order.total.toFixed(2),
+          employeeName,
+          'Aucun article',
+          '',
+          '',
+          ''
+        ]);
+      }
     });
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);

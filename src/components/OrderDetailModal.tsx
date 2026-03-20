@@ -26,6 +26,7 @@ export function OrderDetailModal({
   requireStaffAssignment = false,
 }: OrderDetailModalProps) {
   const [localRequireStaff, setLocalRequireStaff] = useState(requireStaffAssignment);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   React.useEffect(() => {
     setLocalRequireStaff(requireStaffAssignment);
@@ -41,9 +42,39 @@ export function OrderDetailModal({
         onClick={onClose}
       >
         <div 
-          className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+          className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden relative"
           onClick={(e) => e.stopPropagation()}
         >
+          
+          {/* Cancel Confirmation Overlay */}
+          {showCancelConfirm && (
+            <div className="absolute inset-0 z-10 bg-brand-surface/95 backdrop-blur-sm flex items-center justify-center p-6">
+              <div className="bg-brand-bg border border-brand-border rounded-xl p-6 max-w-sm w-full shadow-2xl text-center">
+                <h3 className="text-xl font-serif text-brand-text mb-2">{t.cancelOrder}</h3>
+                <p className="text-neutral-400 text-sm mb-6">
+                  {t.cancelOrderConfirm}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-brand-surface text-brand-text border border-brand-border hover:bg-brand-border transition-colors"
+                  >
+                    {t.noKeepIt}
+                  </button>
+                  <button
+                    onClick={() => {
+                      onUpdateStatus(order.id, 'Canceled');
+                      setShowCancelConfirm(false);
+                      onClose();
+                    }}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/30 transition-colors"
+                  >
+                    {t.yesCancel}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-brand-border bg-brand-bg/50">
@@ -153,6 +184,10 @@ export function OrderDetailModal({
                     <button
                       key={status}
                       onClick={() => {
+                        if (status === 'Canceled') {
+                          setShowCancelConfirm(true);
+                          return;
+                        }
                         if (status === 'Ready' && !order.assignedEmployeeId) {
                           setLocalRequireStaff(true);
                           return;

@@ -4,6 +4,7 @@ import { Language, TRANSLATIONS } from '../constants';
 import { clsx } from 'clsx';
 import { Clock, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface OrderCardProps {
   order: Order;
@@ -52,7 +53,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, language, onClick, 
 
       <div className="flex items-center gap-2 text-xs text-neutral-400 mb-4">
         <Clock className="w-3.5 h-3.5" />
-        <span>{formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}</span>
+        <span>{formatDistanceToNow(new Date(order.createdAt), { addSuffix: true, locale: language === 'fr' ? fr : undefined })}</span>
       </div>
 
       <div className="flex items-center justify-between border-t border-brand-border/50 pt-3 mt-2">
