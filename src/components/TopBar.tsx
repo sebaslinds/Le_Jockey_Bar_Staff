@@ -13,10 +13,9 @@ interface TopBarProps {
   setActiveFilter: (filter: string) => void;
   staff: Employee[];
   onOpenStaffModal: () => void;
-  onAddMockOrders: () => void;
 }
 
-export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilter, staff, onOpenStaffModal, onAddMockOrders }: TopBarProps) {
+export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilter, staff, onOpenStaffModal }: TopBarProps) {
   const t = TRANSLATIONS[language];
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -120,13 +119,6 @@ export function TopBar({ language, onLanguageToggle, activeFilter, setActiveFilt
       </div>
 
       <div className="flex items-center gap-6">
-        <button
-          onClick={onAddMockOrders}
-          className="px-4 py-1.5 bg-brand-accent text-brand-bg text-xs font-bold uppercase tracking-wider rounded-md hover:bg-brand-accent/90 transition-colors"
-        >
-          {t.generateOrders}
-        </button>
-
         <button
           onClick={onLanguageToggle}
           className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-border hover:bg-brand-surface transition-colors text-xs font-medium text-neutral-400"

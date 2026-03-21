@@ -506,6 +506,7 @@ export default function App() {
           orders={orders}
           staff={staff}
           onUpdateOrderStatus={handleUpdateOrderStatus}
+          onUpdatePaymentStatus={handleUpdatePaymentStatus}
           language={language}
         />
 
